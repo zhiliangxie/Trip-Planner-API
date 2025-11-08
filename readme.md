@@ -20,13 +20,13 @@ It integrates with a 3rd-party trips API to provide travel data and supports sor
 
 ## Tech Stack
 
-Runtime: Node.js (TypeScript)
-Framework: Fastify
-ORM: Prisma
-Database: PostgreSQL
-Documentation: Swagger / OpenAPI 3
-Testing: Jest
-Containerization: Docker
+- Runtime: Node.js (TypeScript)
+- Framework: Fastify
+- ORM: Prisma
+- Database: PostgreSQL
+- Documentation: Swagger / OpenAPI 3
+- Testing: Jest
+- Containerization: Docker
 
 ## Requirements
 
@@ -39,33 +39,32 @@ Containerization: Docker
 
 ### Clone the project
 
-git clone https://github.com/zhiliangxie/Trip-Planner-API.git
+`git clone https://github.com/zhiliangxie/Trip-Planner-API.git`
 
-cd trip-planner-api
+`cd trip-planner-api`
 
 ### Set up environment variables
 
-mv .env.example .env
+`mv .env.example .env`
 
 Update TRIPS_API_KEY with the corresponding key
 
 ### Build and start the application
 
-docker-compose up --build
+`docker-compose up --build`
 
 This will:
 
-Start PostgreSQL
-
-Run database migrations
-
-Launch the API
+- Start PostgreSQL
+- Run database migrations
+- Launch the API
+- Run the tests
 
 API available at: http://localhost:3000
 
 Swagger Docs at: http://localhost:3000/docs
 
 ### Run Tests
-docker compose run --rm test
+`docker compose run --rm test`
 ### Remove the project
-docker-compose down -v
+`docker-compose down -v`
