@@ -34,9 +34,9 @@ export async function tripsManagerRoutes(app: FastifyInstance) {
         tags: ['trips'],
         body: {
           type: 'object',
-          required: ['tripId', 'origin', 'destination'],
+          required: ['id', 'origin', 'destination'],
           properties: {
-            tripId: { type: 'string' },
+            id: { type: 'string' },
             origin: { type: 'string', enum: SUPPORTED_AIRPORTS },
             destination: { type: 'string', enum: SUPPORTED_AIRPORTS },
           },
@@ -60,13 +60,13 @@ export async function tripsManagerRoutes(app: FastifyInstance) {
     },
     async (
       request: FastifyRequest<{
-        Body: { tripId: string; origin: string; destination: string };
+        Body: { id: string; origin: string; destination: string };
       }>,
       reply: FastifyReply
     ) => {
-      const { tripId, origin, destination } = request.body;
+      const { id, origin, destination } = request.body;
 
-      const saved = await tripManagerService.saveTrip(tripId, origin, destination);
+      const saved = await tripManagerService.saveTrip(id, origin, destination);
       reply.code(201);
       return saved;
     }

@@ -12,7 +12,7 @@ export class TripManagerService {
   /**
    * Fetches a trip from the external API and saves it to the database.
    *
-   * @param {string} tripId - The unique identifier of the trip to save.
+   * @param {string} id - The unique identifier of the trip to save.
    * @param {string} origin - The IATA code of the origin airport (e.g. "ATL").
    * @param {string} destination - The IATA code of the destination airport (e.g. "PEK").
    * @returns {Promise<Trip>} The saved trip record.
@@ -24,10 +24,10 @@ export class TripManagerService {
    * const savedTrip = await tripManagerService.saveTrip('TRIP123', 'ATL', 'PEK');
    * ```
    */
-  async saveTrip(tripId: string, origin: string, destination: string): Promise<Trip> {
+  async saveTrip(id: string, origin: string, destination: string): Promise<Trip> {
     // Fetch trips from API
     const trips = await searchTripsService.getTrips(origin, destination);
-    const trip = trips.find((t) => t.id === tripId);
+    const trip = trips.find((t) => t.id === id);
 
     if (!trip) {
       throw new AppError('Trip not found', 404, 'TRIP_NOT_FOUND');
