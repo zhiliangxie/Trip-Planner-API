@@ -38,19 +38,31 @@ Containerization: Docker
 ## Installation process
 
 ### Clone the project
+
 git clone https://github.com/zhiliangxie/Trip-Planner-API.git
+
 cd trip-planner-api
+
 ### Set up environment variables
+
 mv .env.example .env
-UPDATE TRIPS_API_KEY with the corresponding key
+
+Update TRIPS_API_KEY with the corresponding key
+
 ### Build and start the application
+
 docker-compose up --build
+
 This will:
+
 Start PostgreSQL
+
 Run database migrations
 
 Launch the API
+
 API available at: http://localhost:3000
+
 Swagger Docs at: http://localhost:3000/docs
 
 ### Run Tests
