@@ -1,0 +1,42 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: tripuser
+      POSTGRES_PASSWORD: trippass
+      POSTGRES_DB: tripplanner
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tripuser -d tripplanner"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  api:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    command: sh -c "npx prisma migrate deploy && node dist/index.js"
+  test:
+    build:
+      context: .
+      target: build
+    command: ["npm", "test"]
+    env_file: .env
+    depends_on:
+      - postgres
+    environment:
+      NODE_ENV: test
+
+volumes:
+  pgdata:
