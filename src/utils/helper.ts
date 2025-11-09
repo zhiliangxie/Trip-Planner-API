@@ -50,3 +50,15 @@ export function isSupportedAirport(code: string): boolean {
  */
 export const buildSearchCacheKey = (origin: string, destination: string) =>
   `trips:${origin}:${destination}`;
+
+/**
+ * The base Redis cache key used to cache data related with PostgreSQL
+ * @constant
+ * @type {string}
+ *
+ * @example
+ * ```
+ * await redis.del(CACHE_KEY_TRIPS); // Clears the saved trips cache
+ * ```
+ */
+export const CACHE_KEY_TRIPS = 'trips:saved';

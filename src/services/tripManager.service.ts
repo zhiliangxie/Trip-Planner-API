@@ -2,15 +2,19 @@ import { prisma } from '../db/prisma';
 import { searchTripsService } from './searchTrips.service';
 import { AppError } from '../utils/errors';
 import { Trip } from '../types/trip';
+import { redis } from '../db/redis';
+import { config } from '../config/env';
+import { CACHE_KEY_TRIPS } from '../utils/helper';
 
 /**
  * Service responsible for managing trips in the local database.
  * Provides methods to save, list, and delete trips that are fetched
- * from the external trips API.
+ * from the external trips API. Includes Redis caching for faster reads.
  */
 export class TripManagerService {
   /**
    * Fetches a trip from the external API and saves it to the database.
+   * Invalidates the Redis cache after saving.
    *
    * @param {string} id - The unique identifier of the trip to save.
    * @param {string} origin - The IATA code of the origin airport (e.g. "ATL").
@@ -53,6 +57,14 @@ export class TripManagerService {
         },
       });
 
+    // Invalidate cache
+    const keys = await redis.keys(`${CACHE_KEY_TRIPS}*`);
+    if (keys.length) {
+      await redis.del(...keys).catch((err) => 
+        console.warn('Failed to clear Redis cache:', err)
+      );
+    }
+      
       return saved;
     } catch (error: unknown) {
       throw new AppError(
@@ -65,6 +77,7 @@ export class TripManagerService {
 
   /**
    * Retrieves a paginated list of saved trips from the database.
+   * Uses Redis caching to improve performance.
    *
    * @param {number} [limit=20] - Maximum number of trips to return.
    * @param {number} [offset=0] - Number of trips to skip (for pagination).
@@ -76,12 +89,21 @@ export class TripManagerService {
    * ```
    */
   async listTrips(limit = 20, offset = 0): Promise<Trip[]> {
+    // Retrieve data from cache
+    const cacheKey = `${CACHE_KEY_TRIPS}:${limit}:${offset}`;
+    const cached = await redis.get(cacheKey);
+    if (cached) {return JSON.parse(cached) as Trip[];}
+
     try {
-      return await prisma.trip.findMany({
+      const trips = await prisma.trip.findMany({
         take: limit,
         skip: offset,
         orderBy: { created_at: 'desc' },
       });
+
+      // Cache result
+      await redis.set(cacheKey, JSON.stringify(trips), 'EX', config.cacheTTL);
+      return trips;
     } catch (error: unknown) {
       throw new AppError(
         error instanceof Error ? error.message : 'Failed to list trips',
@@ -93,6 +115,7 @@ export class TripManagerService {
 
   /**
    * Deletes a saved trip from the database by its ID.
+   * Invalidates the Redis cache.
    *
    * @param {string} id - The unique identifier of the trip to delete.
    * @returns {Promise<void>}
@@ -105,6 +128,7 @@ export class TripManagerService {
    * ```
    */
   async deleteTrip(id: string): Promise<void> {
+    // Validate the trip in db
     const trip = await prisma.trip.findUnique({ where: { id } });
 
     if (!trip) {
@@ -112,7 +136,16 @@ export class TripManagerService {
     }
 
     try {
+      // Delete trip from DB
       await prisma.trip.delete({ where: { id } });
+
+      // Invalidate cache
+      const keys = await redis.keys(`${CACHE_KEY_TRIPS}*`);
+      if (keys.length) {
+        await redis.del(...keys).catch((err) => 
+          console.warn('Failed to clear Redis cache:', err)
+        );
+      }
     } catch (error: unknown) {
       throw new AppError(
         error instanceof Error ? error.message : 'Failed to delete trip',

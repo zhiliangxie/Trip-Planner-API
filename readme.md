@@ -2,7 +2,7 @@
 
 The **Trip Planner API** is a backend service built with **Node.js (Fastify)** that allows users to **search and manage trips** between airports.  
 It integrates with a 3rd-party trips API to provide travel data and supports sorting by **fastest** or **cheapest** options.
-As the API can have hight load of traffic, I have introduced Redis to cache the request.
+As the API can have hight load of traffic, I have introduced Redis to cache the data.
 
 
 ## Features
@@ -16,7 +16,7 @@ As the API can have hight load of traffic, I have introduced Redis to cache the 
 ## Additional considerations
 
 - **Retry logic** as it interacts with external API a retry logic is included in case the request fails
-- **Redis** included redis for caching the queries from the app to the third party application
+- **Redis** included redis for caching the queries from the app to the third party application and interactions with PostgreSQL
 - **Swagger / OpenAPI documentation** included api documantation, available at http://localhost:3000/docs
 - **Dockerized** for easy local setup
 
