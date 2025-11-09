@@ -45,7 +45,7 @@ export class TripSearchService {
     }
 
     // Fetch trips from external API
-    const trips = await searchTripsService.getTrips(origin, destination, sortBy);
+    const trips = await searchTripsService.findTrips(origin, destination);
 
     // Sort and return
     return this.sortTrips(trips, sortParam);

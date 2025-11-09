@@ -26,7 +26,7 @@ export class TripManagerService {
    */
   async saveTrip(id: string, origin: string, destination: string): Promise<Trip> {
     // Fetch trips from API
-    const trips = await searchTripsService.getTrips(origin, destination);
+    const trips = await searchTripsService.findTrips(origin, destination);
     const trip = trips.find((t) => t.id === id);
 
     if (!trip) {
@@ -105,9 +105,9 @@ export class TripManagerService {
    * ```
    */
   async deleteTrip(id: string): Promise<void> {
-    const existing = await prisma.trip.findUnique({ where: { id } });
+    const trip = await prisma.trip.findUnique({ where: { id } });
 
-    if (!existing) {
+    if (!trip) {
       throw new AppError('Trip not found', 404, 'TRIP_NOT_FOUND');
     }
 

@@ -31,3 +31,22 @@ export const SUPPORTED_AIRPORTS = [
 export function isSupportedAirport(code: string): boolean {
   return SUPPORTED_AIRPORTS.includes(code.toUpperCase() as any);
 }
+
+/**
+ * Builds a unique Redis cache key for search trips.
+ * 
+ * Combines the origin, destination criteria to ensure
+ * each trip search query is cached and retrieved independently.
+ *
+ * @param {string} origin - IATA code of the origin airport (e.g. `"ATL"`).
+ * @param {string} destination - IATA code of the destination airport (e.g. `"PEK"`).
+ * @returns {string} A Redis cache key in the format: `"trips:<origin>:<destination>"`.
+ *
+ * @example
+ * ```
+ * const key = buildSearchCacheKey('ATL', 'PEK');
+ * // Result: "trips:ATL:PEK"
+ * ```
+ */
+export const buildSearchCacheKey = (origin: string, destination: string) =>
+  `trips:${origin}:${destination}`;

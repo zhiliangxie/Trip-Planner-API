@@ -1,40 +1,50 @@
 import { config } from '../config/env';
 import { Trip } from '../types/trip';
 import { AppError } from '../utils/errors';
-import { SortBy } from '../types/sort';
+import { redis } from '../db/redis';
+import { buildSearchCacheKey } from '../utils/helper';
 
 /**
  * Service responsible for fetching available trips
- * from the external trips API, with retry and backoff support.
+ * Implements response caching via Redis and supports automatic retries
  */
 export class SearchTripsService {
-  /**
+   /**
    * Fetches a list of trips from the external API between the specified origin and destination.
-   * Automatically retries failed requests up to a limited number of times.
+   * - Uses Redis caching to avoid redundant requests.
+   * - Retries failed API calls.
    *
-   * @param {string} origin - IATA code of the origin airport (e.g. "ATL").
-   * @param {string} destination - IATA code of the destination airport (e.g. "PEK").
-   * @param {SortBy} [sortBy='fastest'] - Sorting criteria for the trip results.
+   * @async
+   * @param {string} origin - IATA code of the origin airport (e.g. `"ATL"`).
+   * @param {string} destination - IATA code of the destination airport (e.g. `"PEK"`).
    * @returns {Promise<Trip[]>} A promise that resolves to an array of trips.
    *
-   * @throws {AppError} If the external API request repeatedly fails or returns a non-OK response.
+   * @throws {AppError} Thrown error when:
+   * - The API returns a non-OK HTTP response (`FETCH_ERROR`).
+   * - The request repeatedly fails after all retry attempts (`FETCH_RETRY_FAILED`).
+   * - An unexpected error occurs after exhausting retries (`UNEXPECTED_ERROR`).
    *
    * @example
    * ```
-   * const trips = await searchTripsService.getTrips('ATL', 'PEK', 'cheapest');
+   * const trips = await searchTripsService.findTrips('ATL', 'PEK');
    * ```
    */
-  async getTrips(
+  async findTrips(
     origin: string,
-    destination: string,
-    sortBy?: SortBy
+    destination: string
   ): Promise<Trip[]> {
-    const sortParam = sortBy ?? 'fastest';
+    const sortBy = 'fastest';
+    // Check items in the cache
+    const cacheKey = buildSearchCacheKey(origin, destination);
+    const cached = await redis.get(cacheKey);
+    if (cached){
+      return JSON.parse(cached) as Trip[];
+    }
 
     const url = new URL(config.tripsApiUrl);
     url.searchParams.set('origin', origin);
     url.searchParams.set('destination', destination);
-    url.searchParams.set('sort_by', sortParam);
+    url.searchParams.set('sort_by', sortBy);
 
     const maxRetries = config.tripsMaxRetry;
     const baseDelay = 300;
@@ -55,7 +65,9 @@ export class SearchTripsService {
           );
         }
 
-        return (await result.json()) as Trip[];
+        const data = (await result.json()) as Trip[];
+        await redis.set(cacheKey, JSON.stringify(data), 'EX', config.cacheTTL);
+        return data;
       } catch (err: unknown) {
         if (attempt === maxRetries) {
           throw new AppError(
@@ -67,7 +79,7 @@ export class SearchTripsService {
           );
         }
 
-        // Wait before retrying (exponential backoff)
+        // Wait before retrying
         const delay = baseDelay * attempt;
         await new Promise((resolve) => setTimeout(resolve, delay));
       }

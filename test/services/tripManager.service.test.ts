@@ -16,7 +16,7 @@ jest.mock('../../src/db/prisma', () => ({
 
 jest.mock('../../src/services/searchTrips.service', () => ({
   searchTripsService: {
-    getTrips: jest.fn(),
+    findTrips: jest.fn(),
   },
 }));
 
@@ -43,20 +43,20 @@ describe('TripManagerService', () => {
   // --------------------------------------------------------------------------
   describe('when invoking saveTrip', () => {
     it('should save a trip successfully', async () => {
-      (searchTripsService.getTrips as jest.Mock).mockResolvedValue([mockTrip]);
+      (searchTripsService.findTrips as jest.Mock).mockResolvedValue([mockTrip]);
       (prisma.trip.findUnique as jest.Mock).mockResolvedValue(null);
       (prisma.trip.create as jest.Mock).mockResolvedValue(mockTrip);
 
       const result = await service.saveTrip('1', 'ATL', 'PEK');
 
-      expect(searchTripsService.getTrips).toHaveBeenCalledWith('ATL', 'PEK');
+      expect(searchTripsService.findTrips).toHaveBeenCalledWith('ATL', 'PEK');
       expect(prisma.trip.findUnique).toHaveBeenCalledWith({ where: { id: '1' } });
       expect(prisma.trip.create).toHaveBeenCalled();
       expect(result).toEqual(mockTrip);
     });
 
     it('should throw TRIP_NOT_FOUND if trip is missing from external results', async () => {
-      (searchTripsService.getTrips as jest.Mock).mockResolvedValue([]);
+      (searchTripsService.findTrips as jest.Mock).mockResolvedValue([]);
 
       await expect(service.saveTrip('1', 'ATL', 'PEK')).rejects.toMatchObject({
         code: 'TRIP_NOT_FOUND',
@@ -65,7 +65,7 @@ describe('TripManagerService', () => {
     });
 
     it('should throw TRIP_ALREADY_SAVED if trip already exists in DB', async () => {
-      (searchTripsService.getTrips as jest.Mock).mockResolvedValue([mockTrip]);
+      (searchTripsService.findTrips as jest.Mock).mockResolvedValue([mockTrip]);
       (prisma.trip.findUnique as jest.Mock).mockResolvedValue(mockTrip);
 
       await expect(service.saveTrip('1', 'ATL', 'PEK')).rejects.toMatchObject({
@@ -75,7 +75,7 @@ describe('TripManagerService', () => {
     });
 
     it('should throw DB_ERROR if Prisma create fails', async () => {
-      (searchTripsService.getTrips as jest.Mock).mockResolvedValue([mockTrip]);
+      (searchTripsService.findTrips as jest.Mock).mockResolvedValue([mockTrip]);
       (prisma.trip.findUnique as jest.Mock).mockResolvedValue(null);
       (prisma.trip.create as jest.Mock).mockRejectedValue(new Error('DB exploded'));
 

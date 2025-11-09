@@ -17,5 +17,7 @@ export const config = {
   tripsApiUrl: process.env.TRIPS_API_URL,
   tripsApiKey: process.env.TRIPS_API_KEY,
   tripsMaxRetry: Number(process.env.TRIPS_MAX_RETRY),
+  cacheTTL: Number(process.env.CACHE_TTL_SECONDS),
+  redisUrl: process.env.REDIS_URL,
   nodeEnv: process.env.NODE_ENV ?? 'development',
 };

@@ -6,7 +6,7 @@ import { AppError } from '../../src/utils/errors';
 
 jest.mock('../../src/services/searchTrips.service', () => ({
   searchTripsService: {
-    getTrips: jest.fn(),
+    findTrips: jest.fn(),
   },
 }));
 
@@ -55,9 +55,9 @@ describe('TripSearchService', () => {
   // getTrips
   // --------------------------------------------------------------------------
   describe('when invoking getTrips', () => {
-    it('should normalize inputs and fetch sorted trips (fastest by default)', async () => {
+    it('should normalize inputs and fetch trips', async () => {
       (isSupportedAirport as jest.Mock).mockReturnValue(true);
-      (searchTripsService.getTrips as jest.Mock).mockResolvedValue(mockTrips);
+      (searchTripsService.findTrips as jest.Mock).mockResolvedValue(mockTrips);
 
       const result = await service.getTrips('atl', 'pek');
 
@@ -65,7 +65,7 @@ describe('TripSearchService', () => {
       expect(isSupportedAirport).toHaveBeenCalledTimes(2);
       expect(isSupportedAirport).toHaveBeenCalledWith('ATL');
       expect(isSupportedAirport).toHaveBeenCalledWith('PEK');
-      expect(searchTripsService.getTrips).toHaveBeenCalledWith('ATL', 'PEK', undefined);
+      expect(searchTripsService.findTrips).toHaveBeenCalledWith('ATL', 'PEK');
 
       // Sorting (fastest first)
       expect(result[0].duration).toBeLessThanOrEqual(result[1].duration);
@@ -73,11 +73,12 @@ describe('TripSearchService', () => {
 
     it('should sort by cost when sortBy is "cheapest"', async () => {
       (isSupportedAirport as jest.Mock).mockReturnValue(true);
-      (searchTripsService.getTrips as jest.Mock).mockResolvedValue(mockTrips);
+      (searchTripsService.findTrips as jest.Mock).mockResolvedValue(mockTrips);
 
       const result = await service.getTrips('ATL', 'PEK', 'cheapest');
 
-      expect(searchTripsService.getTrips).toHaveBeenCalledWith('ATL', 'PEK', 'cheapest');
+
+      expect(searchTripsService.findTrips).toHaveBeenCalledWith('ATL', 'PEK');
       for (let i = 1; i < result.length; i++) {
         expect(result[i].cost).toBeGreaterThanOrEqual(result[i - 1].cost);
       }
@@ -86,13 +87,13 @@ describe('TripSearchService', () => {
     it('should throw AppError UNSUPPORTED_AIRPORT when origin or destination invalid', async () => {
       (isSupportedAirport as jest.Mock).mockReturnValue(false);
 
-      await expect(service.getTrips('XXX', 'YYY', 'fastest')).rejects.toThrow(AppError);
-      await expect(service.getTrips('XXX', 'YYY', 'fastest')).rejects.toMatchObject({
+      await expect(service.getTrips('XXX', 'YYY')).rejects.toThrow(AppError);
+      await expect(service.getTrips('XXX', 'YYY')).rejects.toMatchObject({
         code: 'UNSUPPORTED_AIRPORT',
         statusCode: 400,
       });
 
-      expect(searchTripsService.getTrips).not.toHaveBeenCalled();
+      expect(searchTripsService.findTrips).not.toHaveBeenCalled();
     });
   });
 
